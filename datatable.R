@@ -1,6 +1,7 @@
 library(flights)
-library(data.table)
 library(purrr)
+library(data.table)
+
 
 flights <- fread("flights14.csv")
 flights
@@ -167,3 +168,151 @@ DT[, .(val = c(a,b)), by = ID]
 
 # What if we would like to have all the values of column a and b concatenated, but returned as a list column?
 DT[, .(val = list(c(a,b))), by = ID]
+
+
+
+####################################################################################
+# REFERENCE SEMANTICS
+
+DF = data.frame(ID = c("b","b","b","a","a","c"), a = 1:6, b = 7:12, c = 13:18)
+DF
+
+DF$c <- 18:13               # (1) -- replace entire column
+DF
+# or
+DF$c[DF$ID == "b"] <- 15:13 # (2) -- subassign in column 'c'
+DF
+
+#(1) shallow copy in R as entire column
+#(2) still deep copy in R
+
+
+# The := operator
+#It can be used in j in two ways:
+  
+#  The LHS := RHS form
+
+DT[, c("colA", "colB", ...) := list(valA, valB, ...)]
+
+# when you have only one column to assign to you
+# can drop the quotes and list(), for convenience
+DT[, colA := valA]
+
+# The functional form
+
+DT[, `:=`(colA = valA, # valA is assigned to colA
+          colB = valB, # valB is assigned to colB
+          ...
+)]
+
+
+# Add columns by reference
+# – How can we add columns speed and total delay of each flight to flights data.table?
+head(flights)
+flights[, `:=`(speed = distance / (air_time/60), # speed in mph (mi/h)
+                 delay = arr_delay + dep_delay)]   # delay in minutes
+head(flights)
+
+
+flights <- fread("flights14.csv")
+head(flights)
+
+flights[, c("speed", "delay") := list(distance / (air_time/60), arr_delay + dep_delay)]
+
+
+flights[, sort(unique(hour))]
+flights[hour == 24L, hour := 0L]
+flights[, sort(unique(hour))]
+flights[hour == 24L, hour := 0L][]
+
+# Delete column by reference
+# – Remove delay column
+flights[, c("delay") := NULL]
+head(flights)
+
+## or using the functional form
+flights[, `:=`(delay = NULL)]
+head(flights)
+
+flights[, delay := NULL]
+
+#How can we add a new column which contains for each orig,dest pair the maximum speed?
+flights[, max_speed := max(speed), by = .(origin, dest)]
+head(flights)
+
+
+# How can we add two more columns computing max() of dep_delay and arr_delay for each month, using .SD?
+in_cols  = c("dep_delay", "arr_delay")
+out_cols = c("max_dep_delay", "max_arr_delay")
+flights[, c(out_cols) := lapply(.SD, max), by = month, .SDcols = in_cols]
+head(flights)
+
+
+
+####################################################################################
+# FAQ
+flights <- fread("flights14.csv")
+flights[2, 5]
+flights[, 5]
+
+str(flights[, 5, drop = FALSE])
+str(flights[[5]])
+str(flights[5])
+str(flights[, 5])
+str(flights[, (5)])
+str(flights[, .(5)])
+str(flights$arr_delay)
+head(flights)
+
+rm(x)
+x<- "test"
+flights[, .(x)]
+
+arr_delay <- "test"
+flights[, .(arr_delay)]
+
+mycol <- "arr_delay"
+flights[, mycol] #error
+flights[, ..mycol]
+flights[, mycol, with=FALSE]
+flights[[mycol]] # atomic vector
+
+
+
+
+
+
+View(options())
+
+getOption(datatable.WhenJisSymbolThenCallingScope)
+
+flights[, "arr_delay"]
+flights[, c("arr_delay")]
+flights[, .("arr_delay")]
+flights[, ("arr_delay")]
+
+
+flights[, c("dep_delay", "arr_delay")]
+
+flights[, c(dep_delay, arr_delay)]
+l1 <- c(1,2)
+l2 <- c(3,4)
+c(l1,l2)
+list(l1,l2)
+
+
+
+flights[, c(3,4,5)]
+
+
+flights[, 3:5]
+flights[, .(3:5)]
+flights[3:5]
+
+str(flights[, air_time])
+str(flights[, .(air_time)])
+flights[, air_time:hour]
+
+flights[, .(air_time, distance, hour)]
+
+
