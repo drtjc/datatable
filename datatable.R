@@ -405,3 +405,29 @@ key(flights)
 flights[, sort(unique(hour))]
 
 
+
+setkey(flights, origin, dest)
+key(flights)
+# Get the maximum departure delay for each month corresponding to origin = "JFK". Order the result by month
+ans <- flights["JFK", max(dep_delay), keyby = month]
+head(ans)
+
+attributes(ans)
+
+
+
+################################################################################3
+# SECONDARY INDEXING AND AUTO INDEXING
+flights <- fread("flights14.csv")
+flights
+
+setindex(flights, origin)
+head(flights)
+
+attributes(flights)
+
+indices(flights)
+setindex(flights, origin, dest)
+indices(flights)
+
+
