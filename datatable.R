@@ -316,3 +316,92 @@ flights[, air_time:hour]
 flights[, .(air_time, distance, hour)]
 
 
+
+
+
+#################################################################################################
+# KEYS
+# How can we set the column origin as key in the data.table flights?
+flights <- fread("flights14.csv")
+flights
+
+setkey(flights, origin)
+head(flights)
+
+# or
+setkeyv(flights, "origin")
+
+# Use the key column origin to subset all rows where the origin airport matches “JFK”
+flights[.("JFK")]
+flights[J("JFK")]  
+flights[list("JFK")]
+
+flights["JFK"] 
+
+flights[.("JFK", "EWR")]
+
+flights[c("JFK", "LGA")]     
+flights[.(c("JFK", "LGA"))]
+
+
+# How can we get the column(s) a data.table is keyed by?
+# Using the function key().
+
+key(flights)
+
+# How can I set keys on both origin and dest columns?
+setkey(flights, origin, dest)
+head(flights)
+setkeyv(flights, c("origin", "dest"))
+
+key(flights)
+
+# Subset all rows using key columns where first key column origin matches “JFK” and second key column dest matches “MIA”
+flights[.("JFK", "MIA")]
+flights[.("JFK", "MIA")]
+
+flights[.(c("JFK", "LGA"), "MIA")]
+
+
+
+# Subset all rows where just the first key column origin matches “JFK”
+
+flights[.("JFK")] 
+## or in this case simply 
+flights["JFK"]
+
+
+# Subset all rows where just the second key column dest matches “MIA”
+flights[.(unique(origin), "MIA")]
+
+
+
+# Return arr_delay column as a data.table corresponding to origin = "LGA" and dest = "TPA".
+key(flights)
+# [1] "origin" "dest"
+flights[.("LGA", "TPA"), .(arr_delay)]
+
+
+#On the result obtained above, use chaining to order the column in decreasing order.
+flights[.("LGA", "TPA"), .(arr_delay)][order(-arr_delay)]
+
+# Find the maximum arrival delay corresponding to origin = "LGA" and dest = "TPA".
+flights[.("LGA", "TPA"), max(arr_delay)]
+
+
+flights[, sort(unique(hour))]
+
+setkey(flights, hour)
+key(flights)
+# [1] "hour"
+
+flights[J(24)]
+
+
+flights[.(24), hour := 0L]
+key(flights)
+# NULL
+
+flights[, sort(unique(hour))]
+
+
