@@ -481,3 +481,126 @@ colA = paste("dob_child", 1:3, sep = "")
 colB = paste("gender_child", 1:3, sep = "")
 DT.m2 = melt(DT, id.vars = c("family_id", "age_mother"), measure.vars = list(colA, colB), value.name = c("dob", "gender"))
 DT.m2
+
+
+
+##########################################################################################
+# joins
+
+
+
+indices(flights)
+
+tables()
+tables(index = TRUE)
+tt <- tables(silent = TRUE)
+tt
+
+
+
+
+############################################################################################33
+## examples
+example(data.table)
+DF
+DT
+tables(index = TRUE)
+
+DF = data.frame(x=rep(c("b","a","c"),each=3), y=c(1,3,6), v=1:9)
+DF
+
+DT = data.table(x=rep(c("b","a","c"),each=3), y=c(1,3,6), v=1:9)
+DT
+
+identical(dim(DT), dim(DF))    # TRUE
+dt.tblR> identical(DF$a, DT$a)          # TRUE
+is.list(DF)                    # TRUE
+is.list(DT)                    # TRUE
+is.data.frame(DT)              # TRUE
+is.data.table(DF)             #FALSE
+
+tables()
+
+# basic row subset operations
+DT[2]                                       # 2nd row
+DT[2:3]                                     # 2nd and 3rd row
+w=2:3; DT[w]  # same
+DT[3:2]   # 3rd and 2nd row
+
+DT[order(x)]                                # no need for DT$ prefix on column x
+DT[order(x), ]                              # same; the ',' is optional
+
+DT[y>2]                                     # all rows where DT$y > 2
+DT[y>2 & v>5]                               # compound logical expressions
+DT[!2:4]                                    # all rows other than 2:4
+DT[-(2:4)]                                  # same
+
+# select|compute columns data.table way
+DT[, v]                        # v column (as vector)
+DT[, list(v)]                  # v column (as data.table)
+DT[, .(v)]                     # same as above, .() is a shorthand alias to list()
+
+DT[, sum(v)]                   # sum of column v, returned as vector
+DT[, .(sum(v))]                # same, but return data.table (column autonamed V1)
+DT[, .(sv=sum(v))]             # same, but column named "sv"
+DT[, .(v, v*2)]                # return two column data.table, v and v*2
+
+
+# subset rows and select|compute data.table way
+DT[2:3, sum(v)]                # sum(v) over rows 2 and 3, return vector
+DT[2:3, .(sum(v))]             # same, but return data.table with column V1
+DT[2:3, .(sv=sum(v))]          # same, but return data.table with column sv
+DT[2:5, cat(v, "\n")]          # just for j's side effect
+
+# select columns the data.frame way
+DT[, 2]                        # 2nd column, returns a data.table always
+
+colNum = 2                     # to refer vars in `j` from the outside of data use `..` prefix
+DT[, ..colNum]                 # same, equivalent to DT[, .SD, .SDcols=colNum]
+DT[["v"]]                      # same as DT[, v] but much faster
+DT[, c(2,3)] # cols 2 and 3
+DT[, .(2,3)]  # evaluates to data table containing integer 2 and 3
+DT[, .("y","v")] # evaluates to data table containing characters "y" and "v" 
+DT[, .(y,v)]
+DT[, c("y", "v")]
+
+
+# grouping operations - j and by
+DT[, sum(v), by=x]             # ad hoc by, order of groups preserved in result
+DT[, sum(v), keyby=x]          # same, but order the result on by cols
+DT[, sum(v), by=x][order(x)]   # same but by chaining expressions together
+
+# fast ad hoc row subsets (subsets as joins)
+DT["a", on="x"]                # same as x == "a" but uses binary search (fast)
+DT["a", on=.(x)]               # same, for convenience, no need to quote every column
+DT[.("a"), on="x"]             # same
+DT[x=="a"]                     # same, single "==" internally optimised to use binary search (fast)
+
+DT[x!="b" | y!=3]              # not yet optimized, currently vector scan subset
+DT[.("b", 3), on=c("x", "y")]  # join on columns x,y of DT; uses binary search (fast)
+DT[.("b", 3), on=.(x, y)]      # same, but using on=.()
+
+DT[.("b", 1:2), on=c("x", "y")]             # no match returns NA
+#   x y  v
+#1: b 1  1
+#2: b 2 NA
+
+DT[.("b", 1:2), on=.(x, y), nomatch=0]      # no match row is not returned
+#   x y v
+#1: b 1 1
+
+DT[x=="b" & (y==1 | y==2)]   
+
+
+DT[.("b", 1:2), on=c("x", "y"), roll=Inf]   # locf, nomatch row gets rolled by previous row
+#   x y v
+#1: b 1 1
+#2: b 2 1
+
+DT[.("b", c(1,9)), on=.(x, y), roll=-Inf]      # nocb, nomatch row gets rolled by next row
+#   x y v
+#1: b 1 1
+#2: b 2 2
+
+DT["b", sum(v*y), on="x"]                   # on rows where DT$x=="b", calculate sum(v*y)
+
