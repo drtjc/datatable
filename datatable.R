@@ -604,3 +604,31 @@ DT[.("b", c(1,9)), on=.(x, y), roll=-Inf]      # nocb, nomatch row gets rolled b
 
 DT["b", sum(v*y), on="x"]                   # on rows where DT$x=="b", calculate sum(v*y)
 
+
+# all together now
+DT[x!="a", sum(v), by=x]                    # get sum(v) by "x" for each i != "a"
+
+DT[!"a", sum(v), by=.EACHI, on="x"] # same, but using subsets-as-joins
+
+
+
+
+# joins as subsets
+X = data.table(x=c("c","b"), v=8:7, foo=c(4,2))
+X
+DT
+
+e <- 2:3
+
+DT[e]
+
+DT[X, on="x"]                               # right join
+X[DT, on="x"]                               # left join
+DT[X, on="x", nomatch=0]                    # inner join
+X[DT, on="x", nomatch=0]                    # inner join
+DT[!X, on="x"]  # not join
+DT[X, on=c(y="v")]                          # join DT$y to X$v
+DT[X, on="y==v"]                            # same
+DT[X, on=.(y<=foo)]                         # non-equi join
+DT[X, on=.(y>=foo)] # non-equi join
+
